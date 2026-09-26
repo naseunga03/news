@@ -3,7 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import feedparser
-from google import genai
+import google.generativeai as genai
 
 # 1. 구글 뉴스 RSS 수집
 def get_latest_news():
@@ -16,9 +16,14 @@ def get_latest_news():
     
     return "\n".join(news_items)
 
-# 2. Gemini API 요약 생성
+# 2. Gemini API를 활용한 요약 생성
 def summarize_news(news_text):
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    # API 키 설정
+    api_key = os.getenv("GEMINI_API_KEY")
+    genai.configure(api_key=api_key)
+    
+    # 모델 불러오기
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""
     다음은 오늘 수집된 주요 뉴스 기사들입니다.
@@ -33,10 +38,7 @@ def summarize_news(news_text):
     {news_text}
     """
     
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    response = model.generate_content(prompt)
     return response.text
 
 # 3. 이메일 자동 발송
