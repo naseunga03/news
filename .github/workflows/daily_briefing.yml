@@ -1,0 +1,36 @@
+name: Daily News Briefing Agent
+
+on:
+  schedule:
+    # UTC 기준 23:00 = 한국 시간(KST) 다음 날 오전 08:00
+    - cron: '0 23 * * *'
+  workflow_dispatch: # GitHub 웹 화면에서 버튼을 눌러 수동으로 실행 테스트 가능하도록 설정
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 저장소 코드 불러오기
+      uses: actions/checkout@v4
+
+    - name: 파이썬 3.10 환경 설정
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: 필수 라이브러리 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install google-genai feedparser
+
+    - name: 뉴스 브리핑 에이전트 실행
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+        RECEIVER_EMAILS: ${{ secrets.RECEIVER_EMAILS }}
+      run: |
+        # 저장소에 올라간 파일이 main.py인 경우 python main.py 실행
+        # 만약 ipynb 파일만 있다면 python script로 변환 실행
+        python main.py
