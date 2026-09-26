@@ -17,7 +17,7 @@ def get_latest_news():
     
     return "\n".join(news_items)
 
-# 2. Gemini API를 활용한 요약 생성 (503 에러 대비 재시도 및 대체 모델 적용)
+# 2. Gemini API를 활용한 요약 생성 (재시도 및 대체 모델 적용)
 def summarize_news(news_text):
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     
@@ -34,11 +34,10 @@ def summarize_news(news_text):
     {news_text}
     """
     
-    # 503 오류 시 사용할 모델 순서
     models_to_try = ["gemini-3.8-flash", "gemini-2.5-flash"]
     
     for model_name in models_to_try:
-        for attempt in range(3):  # 모델당 최대 3번 재시도
+        for attempt in range(3):
             try:
                 print(f"[{model_name}] 요약 생성 시도 중... (시도 {attempt + 1}/3)")
                 response = client.models.generate_content(
@@ -52,11 +51,14 @@ def summarize_news(news_text):
                 
     raise RuntimeError("모든 Gemini 모델 서버가 혼잡하여 요청 처리에 실패했습니다.")
 
-# 3. 이메일 자동 발송
+# 3. 이메일 자동 발송 (줄바꿈/공백 제거로 HeaderWriteError 완전 방지)
 def send_email(subject, content):
-    sender_email = os.getenv("SENDER_EMAIL")
-    sender_password = os.getenv("SENDER_PASSWORD")
-    receiver_emails = [e.strip() for e in os.getenv("RECEIVER_EMAILS").split(",")]
+    sender_email = os.getenv("SENDER_EMAIL", "").strip()
+    sender_password = os.getenv("SENDER_PASSWORD", "").strip()
+    
+    # \n 및 \r 완전히 제거
+    raw_receivers = os.getenv("RECEIVER_EMAILS", "")
+    receiver_emails = [e.strip() for e in raw_receivers.replace('\n', '').replace('\r', '').split(",") if e.strip()]
 
     msg = MIMEMultipart()
     msg['From'] = sender_email
