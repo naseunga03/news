@@ -36,7 +36,7 @@ def summarize_news(news_text):
     
     # 지원되는 최신 모델인 gemini-2.5-flash 호출
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         contents=prompt
     )
     return response.text
